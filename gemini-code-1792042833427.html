@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EPI 構文対戦 (Classroom Battle)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@500;700;900&display=swap');
+
+        :root {
+            --accent-blue: #0284c7;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #fde047;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans JP', 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background-image: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 80%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 540px;
+        }
+
+        .header-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .header-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #38bdf8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .round-badge {
+            background: rgba(168, 85, 247, 0.2);
+            color: #c084fc;
+            border: 1px solid rgba(192, 132, 252, 0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* LOBBY */
+        .lobby-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            align-items: center;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .input-group {
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .input-field {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.8rem;
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        /* ライブリーダーボード */
+        .leaderboard-panel {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* TARGET PROMPT BOX */
+        .scaffold-stage {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .scaffold-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scaffold-title {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .sentence-counter {
+            font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-yellow);
+        }
+
+        .jp-prompt-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: rgba(30, 41, 59, 0.9);
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            min-height: 52px;
+        }
+
+        .jp-chunk {
+            color: #ffffff;
+            background: rgba(56, 189, 248, 0.15);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .slot-container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            min-height: 64px;
+            padding: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filled-slot {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: 1px solid #38bdf8;
+        }
+
+        .empty-slot {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px dashed var(--border-color);
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .chain-container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            min-height: 58px;
+            padding: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .placeholder-hint {
+            font-family: 'Noto Sans JP', sans-serif;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+            width: 100%;
+            text-align: center;
+        }
+
+        .tile-tag {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #fff;
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ROUND 3 穴埋め専用スタイル */
+        .blank-stage {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .blank-sentence-display {
+            font-family: 'Rajdhani', 'Noto Sans JP', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .blank-word-slot {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.2);
+            border-bottom: 3px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+            padding: 0.1rem 0.8rem;
+            border-radius: 6px;
+            margin: 0 0.3rem;
+        }
+
+        .round3-interaction-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .word-options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.65rem;
+        }
+
+        @media (min-width: 500px) {
+            .word-options-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        .word-btn {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-bottom: 3px solid var(--accent-green);
+            border-radius: 10px;
+            color: #f1f5f9;
+            padding: 0.6rem 0.4rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+        }
+
+        .word-btn-en {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .word-btn-jp {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-yellow);
+        }
+
+        .word-btn:hover {
+            border-color: #34d399;
+            background: #1e293b;
+        }
+
+        .word-btn.error {
+            background: #991b1b !important;
+            border-color: var(--accent-red) !important;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .chunk-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.65rem;
+        }
+
+        @media (min-width: 500px) {
+            .chunk-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .grid-btn {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-bottom: 3px solid var(--accent-blue);
+            border-radius: 10px;
+            color: #f1f5f9;
+            padding: 0.7rem 0.4rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            min-height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .grid-btn:hover {
+            border-color: #38bdf8;
+            background: #1e293b;
+        }
+
+        .grid-btn.error {
+            background: #991b1b !important;
+            border-color: var(--accent-red) !important;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .grid-btn.cleared {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none !important;
+        }
+
+        .action-btn {
+            width: 100%;
+            max-width: 320px;
+            background: var(--accent-blue);
+            color: #fff;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            padding: 0.9rem 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+        }
+
+        .action-btn:hover {
+            background: #0369a1;
+        }
+
+        /* OVERLAYS & COUNTDOWN */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 16px;
+            z-index: 200;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .countdown-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--accent-yellow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent-yellow);
+            margin-top: 1rem;
+            box-shadow: 0 0 20px rgba(253, 224, 71, 0.3);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header-banner">
+            <div class="header-title" id="app-header-title">EPI 構文対戦 (Classroom Battle)</div>
+            <div id="round-indicator" class="round-badge" style="display: none;">ラウンド 1</div>
+        </div>
+
+        <!-- ロビー画面（グループ手動選択式） -->
+        <div id="lobby-screen" class="lobby-box">
+            <h2 style="font-family: 'Noto Sans JP', sans-serif; color: #38bdf8; font-size: 1.4rem; font-weight: 900;">クラスルーム班対抗ロビー</h2>
+            
+            <div class="input-group">
+                <label>あなたの名前（ニックネーム）</label>
+                <input type="text" id="player-name-input" class="input-field" placeholder="例: トム / 生徒A" value="ゲスト生">
+            </div>
+
+            <div class="input-group">
+                <label>参加するグループ（班）を選択</label>
+                <select id="room-code-select" class="input-field">
+                    <option value="group-1">グループ 1</option>
+                    <option value="group-2">グループ 2</option>
+                    <option value="group-3">グループ 3</option>
+                    <option value="group-4">グループ 4</option>
+                    <option value="group-5">グループ 5</option>
+                    <option value="group-6">グループ 6</option>
+                    <option value="group-7">グループ 7</option>
+                    <option value="group-8">グループ 8</option>
+                    <option value="group-9">グループ 9</option>
+                    <option value="group-10">グループ 10</option>
+                </select>
+            </div>
+
+            <button class="action-btn" onclick="joinClassroom()">🚀 選択したグループで対戦開始</button>
+        </div>
+
+        <!-- ゲームプレイ画面 -->
+        <div id="game-content" style="display: none; flex-direction: column; gap: 1rem;">
+            <!-- 選択中のグループ内リーダーボード -->
+            <div class="leaderboard-panel" id="leaderboard-list">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);" id="current-group-label">🏆 班内リーダーボード</div>
+            </div>
+
+            <div class="scaffold-stage">
+                <div class="scaffold-header-row">
+                    <div class="scaffold-title" id="scaffold-title-text">ターゲット（日本語訳の順序）</div>
+                    <div id="sentence-counter" class="sentence-counter">文 1 / 2</div>
+                </div>
+                <div id="jp-prompt-box" class="jp-prompt-box"></div>
+            </div>
+
+            <div id="active-container"></div>
+            <div id="chunk-grid"></div>
+        </div>
+
+        <!-- ラウンド勝敗発表画面オーバーレイ -->
+        <div id="round-winner-overlay" class="overlay" style="display: none;">
+            <h2 id="round-winner-title" style="font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif; font-size: 2rem; font-weight: 900; color: var(--accent-yellow); margin-bottom: 0.5rem;">ラウンドクリア！</h2>
+            <p id="round-winner-msg" style="color: var(--text-main); font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;"></p>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">まもなく次のラウンドへ自動的に移動します...</p>
+        </div>
+
+        <!-- ラウンド説明 ＆ カウントダウンオーバーレイ -->
+        <div id="instruction-overlay" class="overlay" style="display: none;">
+            <h3 id="instr-round-title" style="font-family: 'Noto Sans JP', sans-serif; color: var(--accent-yellow); font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 0.3rem;">ラウンド 1 ルール説明</h3>
+            <h2 id="instr-main-title" style="font-family: 'Noto Sans JP', sans-serif; font-size: 1.6rem; font-weight: 900; color: #fff; margin-bottom: 1rem;">スロットイン・モード</h2>
+            <div id="instr-body" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 440px; margin-bottom: 1rem; font-weight: 500;"></div>
+            <div style="font-family: 'Noto Sans JP', sans-serif; font-size: 0.9rem; color: #38bdf8; font-weight: 700;">対戦開始まで</div>
+            <div id="countdown-num" class="countdown-circle">10</div>
+        </div>
+
+        <!-- 最終リザルト画面 -->
+        <div id="end-overlay" class="overlay" style="display: none;">
+            <h2 id="end-title" style="font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif; font-size: 2rem; font-weight: 900; color: var(--accent-green); margin-bottom: 0.4rem;">全ラウンド終了！</h2>
+            <p id="end-subtitle" style="color: var(--text-muted); font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem;">お疲れ様でした！</p>
+            <button class="action-btn" onclick="location.reload()">別のグループを選ぶ</button>
+        </div>
+    </div>
+
+    <script>
+        let channel = null;
+        let myId = 'user_' + Math.random().toString(36).substring(2, 7);
+        let myName = 'ゲスト生';
+        let roomCode = 'group-1';
+
+        let playersState = {};
+
+        const SOURCE_SENTENCES = [
+            { id: 1, chunks: ['Today, I’d like to introduce', 'one of my favorite books, Winnie-the-Pooh.'], jpChunks: ['今日は，【私は】紹介したいと思います', '私の一番好きな本のひとつである『クマのプーさん』を。'] },
+            { id: 2, chunks: ['I have read this book', 'many times', 'since I was a child.'], jpChunks: ['私はこの本を読んだことがあります', '何回も', '私が子どもの頃から。'] }
+        ];
+
+        const ROUND3_QUESTIONS = [
+            { fullText: "[BLANK], I’d like to introduce one of my favorite books, Winnie-the-Pooh.", targetWord: "Today", jp: "今日", options: [
+                { en: "Today", jp: "今日" }, { en: "Yesterday", jp: "昨日" }, { en: "Tomorrow", jp: "明日" }, { en: "Now", jp: "今" }, { en: "Always", jp: "いつも" }
+            ] },
+            { fullText: "I have read this book many times since I was a [BLANK].", targetWord: "child", jp: "子ども", options: [
+                { en: "child", jp: "子ども" }, { en: "boy", jp: "少年" }, { en: "girl", jp: "少女" }, { en: "student", jp: "生徒" }, { en: "kid", jp: "子供" }
+            ] }
+        ];
+
+        let currentRound = 1;
+        let sentenceQueue = [];
+        let currentSentence = null;
+        let currentRound3Q = null;
+        let gridData = [];
+        let activeChain = [];
+        let score = 0;
+        let progress = 0;
+        let isInputLocked = false;
+        let activeCountdownTimer = null;
+
+        function joinClassroom() {
+            const nameInput = document.getElementById('player-name-input').value.trim();
+            const selectEl = document.getElementById('room-code-select');
+            
+            if(nameInput) myName = nameInput;
+            if(selectEl) roomCode = selectEl.value;
+
+            // 選択したグループ専用の独立したBroadcastChannelを作成
+            channel = new BroadcastChannel('epi_class_' + roomCode);
+            channel.onmessage = (event) => {
+                const data = event.data;
+                if(data && data.type === 'update_presence') {
+                    playersState[data.id] = data;
+                    renderLeaderboard();
+                }
+            };
+
+            broadcastMyState();
+
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('game-content').style.display = 'flex';
+            document.getElementById('round-indicator').style.display = 'block';
+            document.getElementById('current-group-label').textContent = `🏆 [${selectEl.options[selectEl.selectedIndex].text}] 班内リーダーボード`;
+
+            startRoundWithCountdown(1);
+        }
+
+        function broadcastMyState() {
+            if(!channel) return;
+            const state = {
+                type: 'update_presence',
+                id: myId,
+                name: myName,
+                progress: progress,
+                score: score,
+                round: currentRound
+            };
+            playersState[myId] = state;
+            channel.postMessage(state);
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            const selectEl = document.getElementById('room-code-select');
+            const groupName = selectEl ? selectEl.options[selectEl.selectedIndex].text : '班';
+
+            let html = `<div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">🏆 [${groupName}] 班内リーダーボード</div>`;
+            
+            const sortedPlayers = Object.values(playersState).sort((a, b) => b.score - a.score);
+
+            sortedPlayers.forEach((p, idx) => {
+                const isMe = p.id === myId;
+                html += `
+                    <div class="leaderboard-item" style="${isMe ? 'border: 1px solid var(--accent-green);' : ''}">
+                        <span>${idx + 1}. <strong>${p.name}</strong> ${isMe ? '(あなた)' : ''}</span>
+                        <span>R${p.round} | 進捗: ${p.progress}/2 | スコア: <strong>${p.score}</strong></span>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+        }
+
+        function shuffle(arr) {
+            let newArr = arr.slice();
+            for (let i = newArr.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                let temp = newArr[i];
+                newArr[i] = newArr[j];
+                newArr[j] = temp;
+            }
+            return newArr;
+        }
+
+        function startRoundWithCountdown(roundNum) {
+            currentRound = roundNum;
+            document.getElementById('round-indicator').textContent = `ラウンド ${roundNum}`;
+            isInputLocked = true;
+
+            const overlay = document.getElementById('instruction-overlay');
+            const roundTitle = document.getElementById('instr-round-title');
+            const mainTitle = document.getElementById('instr-main-title');
+            const body = document.getElementById('instr-body');
+            const cdNum = document.getElementById('countdown-num');
+
+            if (roundNum === 1) {
+                roundTitle.textContent = "ラウンド 1 ルール説明";
+                mainTitle.textContent = "スロットイン・モード";
+                body.innerHTML = `日本語のターゲット文に合わせて、ボードから正しい英文チャンクを選び、順番にはめ込んで文章を完成させてください！`;
+                initGameRound1();
+            } else if (roundNum === 2) {
+                roundTitle.textContent = "ラウンド 2 ルール説明";
+                mainTitle.textContent = "全チャンク・スピードレース";
+                body.innerHTML = `<strong>全2文の英文チャンクがすべてボード上にシャッフル配置</strong>されます！指示された日本語文の順に正しく英文チャンクを素早く選択してください！`;
+                initGameRound2();
+            } else if (roundNum === 3) {
+                roundTitle.textContent = "ラウンド 3 ルール説明";
+                mainTitle.textContent = "5択・英単語穴埋めモード";
+                body.innerHTML = `文章の空欄に入る<strong>正しい英単語を5つの選択肢から選んで</strong>文を完成させてください！`;
+                initGameRound3();
+            }
+
+            overlay.style.display = 'flex';
+            let count = 10;
+            cdNum.textContent = count;
+
+            if (activeCountdownTimer) clearInterval(activeCountdownTimer);
+            activeCountdownTimer = setInterval(() => {
+                count--;
+                cdNum.textContent = count;
+                if (count <= 0) {
+                    clearInterval(activeCountdownTimer);
+                    overlay.style.display = 'none';
+                    isInputLocked = false;
+                }
+            }, 1000);
+        }
+
+        function initGameRound1() {
+            score = 0;
+            progress = 0;
+            broadcastMyState();
+            sentenceQueue = JSON.parse(JSON.stringify(SOURCE_SENTENCES));
+            currentSentence = sentenceQueue[0];
+            loadRound1Stage();
+        }
+
+        function loadRound1Stage() {
+            document.getElementById('scaffold-title-text').textContent = "ターゲット（日本語訳の順序）";
+            document.getElementById('chunk-grid').className = "chunk-grid";
+            gridData = [];
+            currentSentence.chunks.forEach((text, index) => {
+                gridData.push({ text: text, index: index, slotted: false });
+            });
+            gridData = shuffle(gridData);
+
+            updatePromptRound1();
+            renderRound1Slots();
+            renderGridRound1();
+        }
+
+        function updatePromptRound1() {
+            const box = document.getElementById('jp-prompt-box');
+            box.style.display = 'flex';
+            box.innerHTML = '';
+            currentSentence.jpChunks.forEach((jpText) => {
+                const span = document.createElement('span');
+                span.className = 'jp-chunk';
+                span.textContent = jpText;
+                box.appendChild(span);
+            });
+            document.getElementById('sentence-counter').textContent = `文 ${3 - sentenceQueue.length} / 2`;
+        }
+
+        function renderRound1Slots() {
+            const container = document.getElementById('active-container');
+            container.className = 'slot-container';
+            container.innerHTML = '';
+            const currentFilledCount = gridData.filter(item => item.slotted).length;
+
+            currentSentence.chunks.forEach((_, i) => {
+                const slottedItem = gridData.find(item => item.index === i && item.slotted);
+                const slotDiv = document.createElement('div');
+                if (slottedItem) {
+                    slotDiv.className = 'filled-slot';
+                    slotDiv.textContent = slottedItem.text;
+                } else if (i === currentFilledCount) {
+                    slotDiv.className = 'empty-slot';
+                    slotDiv.textContent = `[ スロット ${i + 1} ]`;
+                } else {
+                    slotDiv.className = 'empty-slot';
+                    slotDiv.textContent = `...`;
+                }
+                container.appendChild(slotDiv);
+            });
+        }
+
+        function renderGridRound1() {
+            const container = document.getElementById('chunk-grid');
+            container.innerHTML = '';
+            gridData.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'grid-btn';
+                if (item.slotted) btn.classList.add('cleared');
+                btn.textContent = item.text;
+                btn.onclick = () => handleSelectRound1(item, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleSelectRound1(item, btnEl) {
+            if (isInputLocked || item.slotted) return;
+            const currentFilledCount = gridData.filter(i => i.slotted).length;
+
+            if (item.index === currentFilledCount) {
+                item.slotted = true;
+                renderRound1Slots();
+                renderGridRound1();
+
+                if (gridData.every(i => i.slotted)) {
+                    setTimeout(() => {
+                        progress++;
+                        score += 250;
+                        broadcastMyState();
+
+                        sentenceQueue.shift();
+                        if (sentenceQueue.length > 0) {
+                            currentSentence = sentenceQueue[0];
+                            loadRound1Stage();
+                        } else {
+                            advanceRound(2);
+                        }
+                    }, 300);
+                }
+            } else {
+                btnEl.classList.add('error');
+                setTimeout(() => renderGridRound1(), 350);
+            }
+        }
+
+        function initGameRound2() {
+            progress = 0;
+            broadcastMyState();
+            sentenceQueue = JSON.parse(JSON.stringify(SOURCE_SENTENCES));
+            currentSentence = sentenceQueue[0];
+            activeChain = [];
+
+            gridData = [];
+            SOURCE_SENTENCES.forEach(s => {
+                s.chunks.forEach((text, step) => {
+                    gridData.push({ text: text, sentenceId: s.id, step: step, cleared: false });
+                });
+            });
+            gridData = shuffle(gridData);
+
+            updatePromptRound2();
+            renderRound2Chain();
+            renderGridRound2();
+        }
+
+        function updatePromptRound2() {
+            const box = document.getElementById('jp-prompt-box');
+            box.style.display = 'flex';
+            box.innerHTML = '';
+            currentSentence.jpChunks.forEach((jpText) => {
+                const span = document.createElement('span');
+                span.className = 'jp-chunk';
+                span.textContent = jpText;
+                box.appendChild(span);
+            });
+            document.getElementById('sentence-counter').textContent = `文 ${3 - sentenceQueue.length} / 2`;
+        }
+
+        function renderRound2Chain() {
+            const container = document.getElementById('active-container');
+            container.className = 'chain-container';
+            container.innerHTML = activeChain.length === 0 ? '<div class="placeholder-hint">正しい順番でチャンクを選択してください</div>' : '';
+            activeChain.forEach(c => {
+                const tag = document.createElement('div');
+                tag.className = 'tile-tag';
+                tag.textContent = c.text;
+                container.appendChild(tag);
+            });
+        }
+
+        function renderGridRound2() {
+            const container = document.getElementById('chunk-grid');
+            container.innerHTML = '';
+            gridData.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'grid-btn';
+                if (item.cleared) btn.classList.add('cleared');
+                btn.textContent = item.text;
+                btn.onclick = () => handleSelectRound2(item, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleSelectRound2(item, btnEl) {
+            if (isInputLocked || item.cleared || !currentSentence) return;
+            const expectedStep = activeChain.length;
+
+            if (item.sentenceId === currentSentence.id && item.step === expectedStep) {
+                activeChain.push(item);
+                renderRound2Chain();
+
+                if (activeChain.length === currentSentence.chunks.length) {
+                    setTimeout(() => {
+                        activeChain.forEach(c => c.cleared = true);
+                        progress++;
+                        score += 350;
+                        broadcastMyState();
+
+                        activeChain = [];
+                        renderRound2Chain();
+                        renderGridRound2();
+
+                        sentenceQueue.shift();
+                        if (sentenceQueue.length === 0) {
+                            advanceRound(3);
+                        } else {
+                            currentSentence = sentenceQueue[0];
+                            updatePromptRound2();
+                        }
+                    }, 200);
+                }
+            } else {
+                btnEl.classList.add('error');
+                activeChain = [];
+                renderRound2Chain();
+                setTimeout(() => renderGridRound2(), 350);
+            }
+        }
+
+        function initGameRound3() {
+            progress = 0;
+            broadcastMyState();
+            sentenceQueue = JSON.parse(JSON.stringify(ROUND3_QUESTIONS));
+            currentRound3Q = sentenceQueue[0];
+            loadRound3Stage();
+        }
+
+        function loadRound3Stage() {
+            document.getElementById('scaffold-title-text').textContent = "英単語 穴埋め問題";
+            document.getElementById('sentence-counter').textContent = `問題 ${3 - sentenceQueue.length} / 2`;
+            document.getElementById('jp-prompt-box').style.display = 'none';
+
+            const container = document.getElementById('active-container');
+            container.className = 'blank-stage';
+            container.innerHTML = `<div class="blank-sentence-display">${currentRound3Q.fullText.replace('[BLANK]', '<span class="blank-word-slot">______</span>')}</div>`;
+
+            renderRound3Options();
+        }
+
+        function renderRound3Options() {
+            const container = document.getElementById('chunk-grid');
+            container.innerHTML = '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'round3-interaction-area';
+            const optionsGrid = document.createElement('div');
+            optionsGrid.className = 'word-options-grid';
+
+            shuffle(currentRound3Q.options).forEach(opt => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'word-btn';
+                btn.innerHTML = `<span class="word-btn-en">${opt.en}</span><span class="word-btn-jp">${opt.jp}</span>`;
+                btn.onclick = () => handleSelectRound3(opt.en, btn);
+                optionsGrid.appendChild(btn);
+            });
+
+            wrapper.appendChild(optionsGrid);
+            container.appendChild(wrapper);
+        }
+
+        function handleSelectRound3(selectedWord, btnEl) {
+            if (isInputLocked) return;
+            if (selectedWord === currentRound3Q.targetWord) {
+                progress++;
+                score += 400;
+                broadcastMyState();
+
+                sentenceQueue.shift();
+                if (sentenceQueue.length === 0) {
+                    showFinalScreen();
+                } else {
+                    currentRound3Q = sentenceQueue[0];
+                    loadRound3Stage();
+                }
+            } else {
+                btnEl.classList.add('error');
+                setTimeout(() => btnEl.classList.remove('error'), 350);
+            }
+        }
+
+        function advanceRound(nextR) {
+            const overlay = document.getElementById('round-winner-overlay');
+            document.getElementById('round-winner-title').textContent = `ラウンド ${currentRound} クリア！`;
+            document.getElementById('round-winner-msg').textContent = `現在のあなたのスコア: ${score}点`;
+            overlay.style.display = 'flex';
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                startRoundWithCountdown(nextR);
+            }, 3000);
+        }
+
+        function showFinalScreen() {
+            document.getElementById('game-content').style.display = 'none';
+            document.getElementById('end-overlay').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
